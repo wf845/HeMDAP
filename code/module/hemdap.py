@@ -2,7 +2,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from .mp_encoder import Mp_encoder
 from .sc_encoder import *
-from .test import *
 from .contrast import Contrast
 import torch
 import random
