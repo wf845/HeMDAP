@@ -136,7 +136,7 @@ class LinkPredictionTrainer:
 
 if __name__ == "__main__":
 
-    D = np.genfromtxt(r"./data/md.txt")
+    D = np.genfromtxt(r"./data/md-matrix.txt")
     nei_index1, feats1, mps1, pos1 = load_m()
     nei_index2, feats2, mps2, pos2 = load_d()
     feats_dim_list1 = [i.shape[1] for i in feats1]
