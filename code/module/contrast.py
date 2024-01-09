@@ -39,7 +39,6 @@ class Contrast(nn.Module):
         matrix_sc2mp = matrix_sc2mp / (torch.sum(matrix_sc2mp, dim=1).view(-1, 1) + 1e-8)
         lori_sc = -torch.log(matrix_sc2mp.mul(pos.to_dense()).sum(dim=-1)).mean()
         return self.lam * lori_mp + (1 - self.lam) * lori_sc
-       
 
     def forward(self, z_mp1, z_sc1, pos1, z_mp2, z_sc2, pos2, md_matrix):
 
@@ -63,28 +62,25 @@ class Contrast(nn.Module):
         two_elements1 = [item[0] for item in zero_index]
         two_elements2 = [item[1] for item in zero_index]
 
-        one_features_mp1 = z_mp1[first_elements1]  # 从 z_mp1 中获取正样本特征
-
-        one_features_sc1 = z_sc1[first_elements1]  # 从 z_sc1 中获取正样本特征
-
-        one_features_mp2 = z_mp2[first_elements2]  # 从 z_sc2 中获取负样本特征
+        one_features_mp1 = z_mp1[first_elements1]  # Get positive sample features from z_mp1
+        one_features_sc1 = z_sc1[first_elements1]  # Get positive sample features from z_sc1
+        one_features_mp2 = z_mp2[first_elements2]  # Get negative sample features from z_sc2
         one_features_sc2 = z_sc2[first_elements2]
 
         positive_features_m1 = one_features_mp1 + one_features_sc1
         positive_features_d1 = one_features_mp2 + one_features_sc2
 
-        zero_features_mp1 = z_mp1[two_elements1]  # 从 z_mp1 中获取正样本特征
-        zero_features_sc1 = z_sc1[two_elements1]  # 从 z_sc1 中获取正样本特征
+        zero_features_mp1 = z_mp1[two_elements1]  # Get positive sample features from z_mp1
+        zero_features_sc1 = z_sc1[two_elements1]  # Get positive sample features from z_sc1
 
         inner_products1 = []
         inner_products2 = []
 
-        # 逐个元素计算内积
         for i in range(len(positive_features_m1)):
             inner_product = torch.dot(positive_features_m1[i], positive_features_d1[i])
             inner_products1.append(inner_product)
 
-        zero_features_mp2 = z_mp2[two_elements2]  # 从 z_sc2 中获取负样本特征
+        zero_features_mp2 = z_mp2[two_elements2]  # Get negative sample features from z_sc2
         zero_features_sc2 = z_sc2[two_elements2]
 
         neg_features_m2 = zero_features_mp1 + zero_features_sc1
@@ -93,24 +89,19 @@ class Contrast(nn.Module):
         for i in range(len(neg_features_m2)):
             inner_product = torch.dot(neg_features_m2[i], neg_features_d2[i])
             inner_products2.append(inner_product)
-        # 计算正样本部分损失
-    
 
         tensor1 = torch.tensor(inner_products1, requires_grad=True)
         tensor2 = -torch.tensor(inner_products2, requires_grad=True)
-        # 对两个张量逐个元素应用 logsigmoid 函数
+
         logsigmoid_tensor1 = torch.mean(F.logsigmoid(tensor1))
         logsigmoid_tensor2 = torch.mean(F.logsigmoid(tensor2))
-        # 计算负样本部分损失
 
         loss_main = -logsigmoid_tensor1.sum() + logsigmoid_tensor2.sum()
 
-        loss1 = self.gclloss(z_mp1, z_sc1, pos1)  # 根据需要进行调整
+        loss1 = self.gclloss(z_mp1, z_sc1, pos1)
+        loss2 = self.gclloss(z_mp2, z_sc2, pos2)
 
-        loss2 = self.gclloss(z_mp2, z_sc2, pos2)  # 根据需要进行调整
+        combined_loss = loss_main + loss1 + loss2
 
-        # 根据需求计算组合损失
-        combined_loss = loss_main + loss1 + loss2  # 根据需要进行调整
-        
-        # combined_loss = 0.8*loss1 + 0.3*loss2
         return combined_loss
+
