@@ -55,7 +55,7 @@ class Attention(nn.Module):
             beta.append(attn_curr.matmul(sp.t()))
         beta = torch.cat(beta, dim=-1).view(-1)
         beta = self.softmax(beta)
-        # print("mp ", beta.data.cpu().numpy())  # semantic attention
+
         z_mp = 0
         for i in range(len(embeds)):
             z_mp += embeds[i]*beta[i]
