@@ -75,13 +75,13 @@ class MyLoss(nn.Module):
 class LinkPrediction(nn.Module):
     def __init__(self, ft_in):
         super(LinkPrediction, self).__init__()
-        self.fc = nn.Linear(ft_in, 1)  # 输出单元数量为1
-        self.sigmoid = nn.Sigmoid()  # 添加 sigmoid 激活函数
+        self.fc = nn.Linear(ft_in, 1)
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, seq):
-        seq = seq.float()  # 强制将输入数据转换为 Float 数据类型
+        seq = seq.float()
         logits = self.fc(seq)
-        predictions = self.sigmoid(logits)  # 使用 sigmoid 输出概率值
+        predictions = self.sigmoid(logits)
         return predictions
 
 
@@ -148,7 +148,7 @@ if __name__ == "__main__":
     print("The number of meta-paths: ", P1, P2)
 
     model = Hemdap(args.hidden_dim, feats_dim_list1, feats_dim_list2, args.feat_drop, args.attn_drop,
-                 P1, P2, args.sample_rate,args.sample_rate1, args.nei_num, args.tau, args.lam)
+                 P1, P2, args.sample_rate,args.sample_rate1, args.nei_num, args.tau, args.lam,args.gamma)
     LOSS = Contrast(64, args.tau, args.lam)
     optimiser = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.l2_coef)
 
@@ -327,7 +327,7 @@ if __name__ == "__main__":
         test_auc = roc_auc_score(label, test_predict)
 
         Auc_per.append(test_auc)
-        print("//////////每一次auc: " + str(test_auc))
+        print("//////////every-auc: " + str(test_auc))
         varauc.append(test_auc)
 
         ####

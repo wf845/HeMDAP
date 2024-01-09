@@ -33,6 +33,7 @@ def model_params():
     parser.add_argument('--sample_rate1', nargs='+', type=int, default=[7, 3])
     parser.add_argument('--lam', type=float, default=0.2)
     parser.add_argument('--nei_num', type=int, default=2)
+    parser.add_argument('--gamma', type=float, default=0.2)
     args, _ = parser.parse_known_args()
 
     return args
