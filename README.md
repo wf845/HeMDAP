@@ -5,7 +5,7 @@
 > numpy==1.19.2 \
 > scikit_learn==0.24.2
 
-GPU: GeForce RTX 3080 Ti 
+GPU: GeForce RTX 3080 Ti Xeon(R) Silver 4214R
 
 ## Usage
 Fisrt, go into ./code, and then you can use the following commend to run our model: 
