@@ -80,10 +80,6 @@ class Sc_encoder(nn.Module):
             sample_num = self.sample_rate[i]
             for per_node_nei in nei_index[i]:
 
-                # if len(per_node_nei) == 0:
-                #     # 如果该节点没有邻居，生成一个长度为sample_num的全为-1的张量
-                #     select_one = torch.full((sample_num), i, dtype=torch.int64)[np.newaxis]
-
                 if len(per_node_nei) >= sample_num:
                     select_one = torch.tensor(np.random.choice(per_node_nei, sample_num,
                                                                replace=False))[np.newaxis]
@@ -93,7 +89,7 @@ class Sc_encoder(nn.Module):
                 sele_nei.append(select_one)
 
             sele_nei = torch.cat(sele_nei, dim=0).cuda()
-            # 添加打印语句来查看 sele_nei 的形状
+
             # print("sele_nei shape:", sele_nei.shape)
             one_type_emb = F.elu(self.intra[i](sele_nei, nei_h[i + 1], nei_h[0]))
             embeds.append(one_type_emb)
