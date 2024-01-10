@@ -133,7 +133,7 @@ class LinkPredictionTrainer:
 
 if __name__ == "__main__":
 
-    D = np.genfromtxt(r"/root/HeMDAP/data/md-matrix.txt")
+    D = np.genfromtxt(r"./data/md-matrix.txt")
     own_str = 'model'
     nei_index1, feats1, mps1, pos1 = load_m()
     nei_index2, feats2, mps2, pos2 = load_d()
