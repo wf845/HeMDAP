@@ -8,11 +8,11 @@ import torch
 import random
 
 
-class HeCo(nn.Module):
-    def __init__(self, hidden_dim, feats_dim_list1, feats_dim_list2, feat_drop, attn_drop, P1, P2, sample_rate,sample_rate1, nei_num, tau, lam):
-        super(HeCo, self).__init__()
+class Hemdap(nn.Module):
+    def __init__(self, hidden_dim, feats_dim_list1, feats_dim_list2, feat_drop, attn_drop, P1, P2, sample_rate,sample_rate1, nei_num, tau, lam,gamma):
+        super(Hemdap, self).__init__()
         self.hidden_dim = hidden_dim
-
+        self.gamma = gamma
         self.fc_list2 = nn.ModuleList([nn.Linear(feats_dim, hidden_dim, bias=True)
                                        for feats_dim in feats_dim_list2])
         # print(self.fc_list2)
@@ -66,15 +66,15 @@ class HeCo(nn.Module):
         z_mp1 = self.mp1(h_all1[0], mps1)
         z_sc1 = self.sc1(h_all1, nei_index1)
 
-        z_mp1 = (1-gamma)*z_mp1.detach()
-        z_sc1 = gamma*z_sc1.detach()
+        z_mp1 = (1-self.gamma)*z_mp1.detach()
+        z_sc1 = self.gamma*z_sc1.detach()
         z1 =  torch.add(z_mp1, z_sc1)
 
         z_mp2 = self.mp2(h_all2[0], mps2)
         z_sc2 = self.sc2(h_all2, nei_index2)
 
-        z_mp2 = (1-gamma)*z_mp2.detach()
-        z_sc2 = gamma*z_sc2.detach()
+        z_mp2 = (1-self.gamma)*z_mp2.detach()
+        z_sc2 = self.gamma*z_sc2.detach()
         z2 =  torch.add(z_mp2, z_sc2)
 
         return z1, z2

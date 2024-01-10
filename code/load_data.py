@@ -36,7 +36,7 @@ def sparse_mx_to_torch_sparse_tensor(sparse_mx):
 
 def load_d():
     # The order of node types: 0 p 1 a 2 s
-    path = "./data/hmdd"
+    path = "./data/hmdd/"
 
     nei_d_g = np.load(path + "nei_d_g.npy", allow_pickle=True)
     nei_d_m = np.load(path + "nei_d_m.npy", allow_pickle=True)
@@ -63,7 +63,7 @@ def load_d():
 
 def load_m():
     # The order of node types: 0 p 1 a 2 s
-    path = "./data/hmdd"
+    path = "./data/hmdd/"
 
     nei_m_d = np.load(path + "nei_m_d.npy", allow_pickle=True)
     nei_m_g = np.load(path + "nei_m_g.npy", allow_pickle=True)
