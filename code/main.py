@@ -277,12 +277,10 @@ if __name__ == "__main__":
                 Xn[Index_zeroRow[test_f[ii]], Index_zeroCol[test_f[ii]]] = 3
             D1 = copy.deepcopy(Xn)
             print(D1)
-            # train_data = prepare_data(opt, D1)
-            train_data = prepare_data(opt, D)
+            train_data = prepare_data(opt, D1)
 
             gc.collect()
             torch.cuda.empty_cache()
-            # loss = train(model, train_data, opt, mirna_features, disease_features)
 
             cnt_wait1 = 0
             best1 = 1e9
@@ -319,7 +317,7 @@ if __name__ == "__main__":
                 result_list[i, 0] = model(feats_one)
             for i in range(len(test_f)):
                 miRNA_feats_zero = mirna_features[Index_zeroRow[test_f[i]]]
-                # print(miRNA_feats_zero)
+
                 disease_feats_zero = disease_features[Index_zeroCol[test_f[i]]]
 
                 miRNA_feats_zero = torch.tensor(miRNA_feats_zero).to('cuda:0').float()
@@ -333,13 +331,11 @@ if __name__ == "__main__":
             print("//////////every-auc: " + str(test_auc))
             varauc.append(test_auc)
 
-            ####
             max_f1_score, threshold = f1_score_binary(torch.from_numpy(label).float(),
                                                       torch.from_numpy(test_predict).float())
             f1_score_per.append(max_f1_score)
             print("//////////max_f1_score:", max_f1_score)
-            # acc = accuracy_binary(torch.from_numpy(label).float(), torch.from_numpy(test_predict).float(),threshold)
-            # print("acc:", acc)
+
             precision = precision_binary(torch.from_numpy(label).float(), torch.from_numpy(test_predict).float(),
                                          threshold)
             precision_per.append(precision)
@@ -347,8 +343,6 @@ if __name__ == "__main__":
             recall = recall_binary(torch.from_numpy(label).float(), torch.from_numpy(test_predict).float(), threshold)
             recall_per.append(recall)
             print("//////////recall:", recall)
-            # mcc_score = mcc_binary(torch.from_numpy(label).float(), torch.from_numpy(test_predict).float(),threshold)
-            # print("mcc_score:", mcc_score)
             pr, re, thresholds = precision_recall_curve(label, test_predict)
             aupr = auc(re, pr)
             aupr_per.append(aupr)
@@ -379,12 +373,12 @@ if __name__ == "__main__":
     vrecall = np.var(varrecall)
     vaupr = np.var(varaupr)
 
-    print("sumauc = %f±%f\n" % (float(np.mean(AAuc_list1)), vauc))
+print("sumauc = %f±%f\n" % (float(np.mean(AAuc_list1)), vauc))
 
-    print("sumf1_score = %f±%f\n" % (float(np.mean(f1_score_list1)), vf1_score))
-    print("sumprecision = %f±%f\n" % (float(np.mean(precision_list1)), vprecision))
-    print("sumrecall = %f±%f\n" % (float(np.mean(recall_list1)), vrecall))
-    print("sumaupr = %f±%f\n" % (float(np.mean(aupr_list1)), vaupr))
+print("sumf1_score = %f±%f\n" % (float(np.mean(f1_score_list1)), vf1_score))
+print("sumprecision = %f±%f\n" % (float(np.mean(precision_list1)), vprecision))
+print("sumrecall = %f±%f\n" % (float(np.mean(recall_list1)), vrecall))
+print("sumaupr = %f±%f\n" % (float(np.mean(aupr_list1)), vaupr))
 
 
 
