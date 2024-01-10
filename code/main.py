@@ -50,12 +50,12 @@ torch.cuda.manual_seed(seed)
 
 class Config(object):
     def __init__(self):
-        # self.validation = 5
         self.epoch = 200
         self.fold = 5
         self.seed = 4
         self.dim = 128
         self.lr = 0.0045
+
 
 class MyLoss(nn.Module):
     def __init__(self):
@@ -71,7 +71,6 @@ class MyLoss(nn.Module):
         return loss
 
 
-
 class LinkPrediction(nn.Module):
     def __init__(self, ft_in):
         super(LinkPrediction, self).__init__()
@@ -83,7 +82,6 @@ class LinkPrediction(nn.Module):
         logits = self.fc(seq)
         predictions = self.sigmoid(logits)
         return predictions
-
 
 
 class LinkPredictionTrainer:
@@ -133,10 +131,10 @@ class LinkPredictionTrainer:
         return loss
 
 
-
 if __name__ == "__main__":
 
-    D = np.genfromtxt(r"./data/md-matrix.txt")
+    D = np.genfromtxt(r"/root/HeMDAP/data/md-matrix.txt")
+    own_str = 'model'
     nei_index1, feats1, mps1, pos1 = load_m()
     nei_index2, feats2, mps2, pos2 = load_d()
     feats_dim_list1 = [i.shape[1] for i in feats1]
@@ -148,7 +146,7 @@ if __name__ == "__main__":
     print("The number of meta-paths: ", P1, P2)
 
     model = Hemdap(args.hidden_dim, feats_dim_list1, feats_dim_list2, args.feat_drop, args.attn_drop,
-                 P1, P2, args.sample_rate,args.sample_rate1, args.nei_num, args.tau, args.lam,args.gamma)
+                   P1, P2, args.sample_rate, args.sample_rate1, args.nei_num, args.tau, args.lam, args.gamma)
     LOSS = Contrast(64, args.tau, args.lam)
     optimiser = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.l2_coef)
 
@@ -179,6 +177,7 @@ if __name__ == "__main__":
             best = loss
             best_t = epoch
             cnt_wait = 0
+            torch.save(model.state_dict(), 'HeCo_' + own_str + '.pkl')
         else:
             cnt_wait += 1
         if cnt_wait == args.patience:
@@ -188,10 +187,11 @@ if __name__ == "__main__":
         optimiser.step()
 
     print('Loading {}th epoch'.format(best_t))
+    model.load_state_dict(torch.load('HeCo_' + own_str + '.pkl'))
     model.eval()
-
+    # os.remove('HeCo_' + own_str + '.pkl')
     embed1, embed2 = model.get_embeds(feats1, feats2, mps1, mps2, nei_index1, nei_index2)
-    # print(embed1.shape),print(embed2.shape)
+
     endtime = datetime.datetime.now()
     time = (endtime - starttime).seconds
     print("Total time: ", time, "s")
@@ -202,18 +202,20 @@ if __name__ == "__main__":
     disease_features = embed2
 
     [row, col] = np.shape(D)
+
     indexn = np.argwhere(D == 0)
     Index_zeroRow = indexn[:, 0]
     Index_zeroCol = indexn[:, 1]
-   
+
     indexp = np.argwhere(D == 1)
     Index_PositiveRow = indexp[:, 0]
     Index_PositiveCol = indexp[:, 1]
     totalassociation = np.size(Index_PositiveRow)
-    fold = int(totalassociation / opt.fold)
+    fold = int(totalassociation / 5)
     zero_length = np.size(Index_zeroRow)
-    cv_num = opt.fold
-   
+    fold1 = int(zero_length / 5)
+    cv_num = 5
+
     varauc = []
     AAuc_list1 = []
 
@@ -225,141 +227,157 @@ if __name__ == "__main__":
     recall_list1 = []
     varaupr = []
     aupr_list1 = []
+    for time in range(1, 2):
 
-    Auc_per = []
-    f1_score_per = []
-    precision_per = []
-    recall_per = []
-    aupr_per = []
+        Auc_per = []
 
-    np.random.seed(opt.seed)
-    p = np.random.permutation(totalassociation)
-    model = LinkPrediction(ft_in=opt.dim)
-    optimizer = optim.Adam(model.parameters(), lr=opt.lr)
-    model = model.cuda()
-    my_loss = MyLoss()
-    trainer = LinkPredictionTrainer(model, optimizer, my_loss)
+        f1_score_per = []
+        precision_per = []
+        recall_per = []
+        aupr_per = []
 
-    for f in range(1, cv_num + 1):
-        optimiser.zero_grad()
-        print("cross_validation:", '%01d' % (f))
-        if f == cv_num:
-            testset = p[((f - 1) * fold): totalassociation + 1]
-        else:
-            testset = p[((f - 1) * fold): f * fold]
-
-        # test pos and neg
-        all_f = np.random.permutation(np.size(Index_zeroRow))
-        test_p = list(testset)
-
-        if f == 1:
-            test_f = all_f[5*len(test_p): 6*len(test_p)]
-        else:
-            test_f = all_f[len(test_p): 2*len(test_p)]
-
-        difference_set_f = list(set(all_f).difference(set(test_f)))
-        train_p = list(set(p).difference(set(testset)))
-        train_f = difference_set_f
-        X = copy.deepcopy(D)
-        Xn = copy.deepcopy(X)
-
-        zero_index = []
-        for ii in range(len(train_f)):
-            zero_index.append([Index_zeroRow[train_f[ii]], Index_zeroCol[train_f[ii]]])
-        true_list = zeros((len(test_p) + len(test_f), 1))
-        # exclude the testset during training.
-        for ii in range(len(test_p)):
-            Xn[Index_PositiveRow[testset[ii]], Index_PositiveCol[testset[ii]]] = 2
-            true_list[ii, 0] = 1
-        for ii in range(len(test_f)):
-            Xn[Index_zeroRow[test_f[ii]], Index_zeroCol[test_f[ii]]] = 3
-        D1 = copy.deepcopy(Xn)
-        print(D1)
-
-        train_data = prepare_data(opt, D1)
-
-        gc.collect()
-        torch.cuda.empty_cache()
-
-
-        cnt_wait1 = 0
-        best1 = 1e9
-        best_t2 = 0
-
-        for epoch in range(1, opt.epoch + 1):
-            loss = trainer.train_step(train_data, mirna_features, disease_features)
-            print("loss ", loss.data.cpu())
-            if loss < best1:
-                # print(loss)
-                best1 = loss
-                best_t2 = epoch
-                cnt_wait1 = 0
+        np.random.seed(opt.seed)
+        p = np.random.permutation(totalassociation)
+        model = LinkPrediction(ft_in=opt.dim)
+        optimizer = optim.Adam(model.parameters(), lr=opt.lr)
+        model = model.cuda()
+        my_loss = MyLoss()
+        trainer = LinkPredictionTrainer(model, optimizer, my_loss)
+        for f in range(1, opt.fold + 1):
+            optimiser.zero_grad()
+            print("cross_validation:", '%01d' % (f))
+            if f == cv_num:
+                testset = p[((f - 1) * fold): totalassociation + 1]
             else:
-                cnt_wait1 += 1
-            if cnt_wait == args.patience:
-                print('Early stopping!')
-                break
-            loss.backward()
-            optimizer.step()
+                testset = p[((f - 1) * fold): f * fold]
 
-        # Set the model to evaluation mode.
-        model.eval()
+            all_f = np.random.permutation(np.size(Index_zeroRow))
+            test_p = list(testset)
+            if f == 1:
+                test_f = all_f[5 * len(test_p): 6 * len(test_p)]
+            else:
+                test_f = all_f[len(test_p): 2 * len(test_p)]
 
-        test_length_p = len(test_p)
+            difference_set_f = list(set(all_f).difference(set(test_f)))
+            train_p = list(set(p).difference(set(testset)))
 
-        result_list = zeros((test_length_p + len(test_f), 1))
-        for i in range(test_length_p):
-            miRNA_feats_one = mirna_features[Index_PositiveRow[testset[i]]]
-            disease_feats_one = disease_features[Index_PositiveCol[testset[i]]]
-            miRNA_feats_one = torch.tensor(miRNA_feats_one).to('cuda:0').float()
-            disease_feats_one = torch.tensor(disease_feats_one).to('cuda:0').float()
-            feats_one = torch.cat((miRNA_feats_one, disease_feats_one), dim=0)
-            result_list[i, 0] = model(feats_one)
-        for i in range(len(test_f)):
-            miRNA_feats_zero = mirna_features[Index_zeroRow[test_f[i]]]
-            disease_feats_zero = disease_features[Index_zeroCol[test_f[i]]]
-            miRNA_feats_zero = torch.tensor(miRNA_feats_zero).to('cuda:0').float()
-            disease_feats_zero = torch.tensor(disease_feats_zero).to('cuda:0').float()
-            feats_zero = torch.cat((miRNA_feats_zero, disease_feats_zero), dim=0)
-            result_list[i + test_length_p, 0] = model(feats_zero)
-        test_predict = result_list
-        label = true_list
-        test_auc = roc_auc_score(label, test_predict)
+            train_f = difference_set_f
 
-        Auc_per.append(test_auc)
-        print("//////////every-auc: " + str(test_auc))
-        varauc.append(test_auc)
+            X = copy.deepcopy(D)
+            Xn = copy.deepcopy(X)
 
-        ####
-        max_f1_score, threshold = f1_score_binary(torch.from_numpy(label).float(),
-                                                  torch.from_numpy(test_predict).float())
-        f1_score_per.append(max_f1_score)
-        print("//////////max_f1_score:", max_f1_score)
+            zero_index = []
+            for ii in range(len(train_f)):
+                zero_index.append([Index_zeroRow[train_f[ii]], Index_zeroCol[train_f[ii]]])
+            true_list = zeros((len(test_p) + len(test_f), 1))
+            for ii in range(len(test_p)):
+                Xn[Index_PositiveRow[testset[ii]], Index_PositiveCol[testset[ii]]] = 2
+                true_list[ii, 0] = 1
+            for ii in range(len(test_f)):
+                Xn[Index_zeroRow[test_f[ii]], Index_zeroCol[test_f[ii]]] = 3
+            D1 = copy.deepcopy(Xn)
+            print(D1)
+            # train_data = prepare_data(opt, D1)
+            train_data = prepare_data(opt, D)
 
-        precision = precision_binary(torch.from_numpy(label).float(), torch.from_numpy(test_predict).float(),
-                                     threshold)
-        precision_per.append(precision)
-        print("//////////precision:", precision)
-        recall = recall_binary(torch.from_numpy(label).float(), torch.from_numpy(test_predict).float(), threshold)
-        recall_per.append(recall)
-        print("//////////recall:", recall)
+            gc.collect()
+            torch.cuda.empty_cache()
+            # loss = train(model, train_data, opt, mirna_features, disease_features)
 
-        pr, re, thresholds = precision_recall_curve(label, test_predict)
-        aupr = auc(re, pr)
-        aupr_per.append(aupr)
-        print("//////////aupr", aupr)
+            cnt_wait1 = 0
+            best1 = 1e9
+            best_t2 = 0
 
-        varf1_score.append(max_f1_score)
-        varprecision.append(precision)
-        varrecall.append(recall)
-        varaupr.append(aupr)
+            for epoch in range(1, opt.epoch + 1):
+                loss = trainer.train_step(train_data, mirna_features, disease_features)
+
+                print("loss ", loss.data.cpu())
+                if loss < best1:
+                    # print(loss)
+                    best1 = loss
+                    best_t2 = epoch
+                    cnt_wait1 = 0
+                else:
+                    cnt_wait1 += 1
+                if cnt_wait == args.patience:
+                    print('Early stopping!')
+                    break
+                loss.backward()
+                optimizer.step()
+
+            model.eval()
+
+            test_length_p = len(test_p)
+            result_list = zeros((test_length_p + len(test_f), 1))
+            for i in range(test_length_p):
+                miRNA_feats_one = mirna_features[Index_PositiveRow[testset[i]]]
+                disease_feats_one = disease_features[Index_PositiveCol[testset[i]]]
+
+                miRNA_feats_one = torch.tensor(miRNA_feats_one).to('cuda:0').float()
+                disease_feats_one = torch.tensor(disease_feats_one).to('cuda:0').float()
+                feats_one = torch.cat((miRNA_feats_one, disease_feats_one), dim=0)
+                result_list[i, 0] = model(feats_one)
+            for i in range(len(test_f)):
+                miRNA_feats_zero = mirna_features[Index_zeroRow[test_f[i]]]
+                # print(miRNA_feats_zero)
+                disease_feats_zero = disease_features[Index_zeroCol[test_f[i]]]
+
+                miRNA_feats_zero = torch.tensor(miRNA_feats_zero).to('cuda:0').float()
+                disease_feats_zero = torch.tensor(disease_feats_zero).to('cuda:0').float()
+                feats_zero = torch.cat((miRNA_feats_zero, disease_feats_zero), dim=0)
+                result_list[i + test_length_p, 0] = model(feats_zero)
+            test_predict = result_list
+            label = true_list
+            test_auc = roc_auc_score(label, test_predict)
+            Auc_per.append(test_auc)
+            print("//////////every-auc: " + str(test_auc))
+            varauc.append(test_auc)
+
+            ####
+            max_f1_score, threshold = f1_score_binary(torch.from_numpy(label).float(),
+                                                      torch.from_numpy(test_predict).float())
+            f1_score_per.append(max_f1_score)
+            print("//////////max_f1_score:", max_f1_score)
+            # acc = accuracy_binary(torch.from_numpy(label).float(), torch.from_numpy(test_predict).float(),threshold)
+            # print("acc:", acc)
+            precision = precision_binary(torch.from_numpy(label).float(), torch.from_numpy(test_predict).float(),
+                                         threshold)
+            precision_per.append(precision)
+            print("//////////precision:", precision)
+            recall = recall_binary(torch.from_numpy(label).float(), torch.from_numpy(test_predict).float(), threshold)
+            recall_per.append(recall)
+            print("//////////recall:", recall)
+            # mcc_score = mcc_binary(torch.from_numpy(label).float(), torch.from_numpy(test_predict).float(),threshold)
+            # print("mcc_score:", mcc_score)
+            pr, re, thresholds = precision_recall_curve(label, test_predict)
+            aupr = auc(re, pr)
+            aupr_per.append(aupr)
+            print("//////////aupr", aupr)
+
+            varf1_score.append(max_f1_score)
+            varprecision.append(precision)
+            varrecall.append(recall)
+            varaupr.append(aupr)
+
+        AAuc_list1.append(np.mean(Auc_per))
+
+        f1_score_list1.append(np.mean(f1_score_per))
+        precision_list1.append(np.mean(precision_per))
+        recall_list1.append(np.mean(recall_per))
+        aupr_list1.append(np.mean(aupr_per))
+
+        print("//////////Aucaverage: " + str(AAuc_list1))
+        print("//////////f1_scoreaverage: " + str(f1_score_list1))
+        print("//////////precisionaverage: " + str(precision_list1))
+        print("//////////recallaverage: " + str(recall_list1))
+        print("//////////aupraverage: " + str(aupr_list1))
+
     vauc = np.var(varauc)
 
     vf1_score = np.var(varf1_score)
     vprecision = np.var(varprecision)
     vrecall = np.var(varrecall)
     vaupr = np.var(varaupr)
- 
 
     print("sumauc = %f±%f\n" % (float(np.mean(AAuc_list1)), vauc))
 
@@ -367,10 +385,11 @@ if __name__ == "__main__":
     print("sumprecision = %f±%f\n" % (float(np.mean(precision_list1)), vprecision))
     print("sumrecall = %f±%f\n" % (float(np.mean(recall_list1)), vrecall))
     print("sumaupr = %f±%f\n" % (float(np.mean(aupr_list1)), vaupr))
-            
-            
-            
-            
-            
-            
-            
+
+
+
+
+
+
+
+
