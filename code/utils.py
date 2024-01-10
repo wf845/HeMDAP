@@ -86,13 +86,11 @@ def recall_binary(true_data: torch.Tensor, predict_data: torch.Tensor, threshold
     return score
 
 
+def prepare_data(opt, D1):
+    [row_m, col_d] = np.shape(D1)
 
-
-
-# 这里D1就是1/5清零之后的md关联数据,R11是miRNA相似性数据,R22是疾病相似性数据
-def prepare_data(d):
-    [row_m, col_d] = np.shape(d)
     dataset = dict()
+
     one_index = []
     zero_index = []
 
@@ -105,6 +103,8 @@ def prepare_data(d):
 
     random.shuffle(one_index)
     random.shuffle(zero_index)
+    #     num_samples = len(one_index)
+    #     zero_index = zero_index[:num_samples]
     one_tensor = t.LongTensor(one_index)
     zero_tensor = t.LongTensor(zero_index)
 
