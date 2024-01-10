@@ -197,7 +197,7 @@ if __name__ == "__main__":
     print("Total time: ", time, "s")
 
     opt = Config()
-    # 生成mirna和疾病特征向量（64维）
+
     mirna_features = embed1
     disease_features = embed2
 
