@@ -94,6 +94,8 @@ def prepare_data(opt, D1):
     one_index = []
     zero_index = []
 
+
+
     for i in range(row_m):
         for j in range(col_d):
             if D1[i][j] == 1:

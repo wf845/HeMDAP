@@ -281,27 +281,7 @@ if __name__ == "__main__":
 
             gc.collect()
             torch.cuda.empty_cache()
-
-            cnt_wait1 = 0
-            best1 = 1e9
-            best_t2 = 0
-
-            for epoch in range(1, opt.epoch + 1):
-                loss = trainer.train_step(train_data, mirna_features, disease_features)
-
-                print("loss ", loss.data.cpu())
-                if loss < best1:
-                    # print(loss)
-                    best1 = loss
-                    best_t2 = epoch
-                    cnt_wait1 = 0
-                else:
-                    cnt_wait1 += 1
-                if cnt_wait == args.patience:
-                    print('Early stopping!')
-                    break
-                loss.backward()
-                optimizer.step()
+            loss = trainer.train_step(train_data, mirna_features, disease_features)
 
             model.eval()
 
