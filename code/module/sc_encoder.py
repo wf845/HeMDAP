@@ -2,6 +2,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import random
+
+random.seed()
 
 
 class inter_att(nn.Module):
@@ -65,7 +68,7 @@ class intra_att(nn.Module):
 
 
 class Sc_encoder(nn.Module):
-    def                                                                                                                                                                                                          __init__(self, hidden_dim, sample_rate, nei_num, attn_drop):
+    def __init__(self, hidden_dim, sample_rate, nei_num, attn_drop):
         super(Sc_encoder, self).__init__()
         self.intra = nn.ModuleList([intra_att(hidden_dim, attn_drop) for _ in range(nei_num)])
         self.inter = inter_att(hidden_dim, attn_drop)
@@ -80,7 +83,15 @@ class Sc_encoder(nn.Module):
             sample_num = self.sample_rate[i]
             for per_node_nei in nei_index[i]:
 
-                if len(per_node_nei) >= sample_num:
+                if len(per_node_nei) == 0:
+                    if len(per_node_nei) == 0:
+                        # Generate 'sample_num' random integers between 0 (inclusive) and 434 (exclusive)
+                        random_integers = np.random.randint(0, 434, sample_num)
+
+                        # you can use 'np.random.choice'. If not, this will just return 'random_integers'.
+                        select_one = torch.tensor(np.random.choice(random_integers, size=sample_num, replace=True))[
+                            np.newaxis]
+                elif len(per_node_nei) >= sample_num:
                     select_one = torch.tensor(np.random.choice(per_node_nei, sample_num,
                                                                replace=False))[np.newaxis]
                 else:

@@ -1,9 +1,9 @@
-import numpy as np
-import csv
-import torch as t
 import random
-from numpy import *
+import numpy as np
 import torch
+import torch as t
+from numpy import *
+
 np.random.seed(0)
 random.seed(0)
 torch.manual_seed(0)
@@ -105,8 +105,7 @@ def prepare_data(opt, D1):
 
     random.shuffle(one_index)
     random.shuffle(zero_index)
-    #     num_samples = len(one_index)
-    #     zero_index = zero_index[:num_samples]
+
     one_tensor = t.LongTensor(one_index)
     zero_tensor = t.LongTensor(zero_index)
 
